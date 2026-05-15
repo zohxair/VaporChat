@@ -1,28 +1,30 @@
-# 🌌 VaporChat
+# 🌌 VaporChat: AI-Integrated Messaging Protocol
 
-VaporChat is a high-performance, single-page real-time messaging application featuring a "Midnight Neon" aesthetic. It leverages Firebase for backend services (Firestore/Auth) and connects to the DeepSeek-V4-Pro model via the Hugging Face Router for integrated AI assistant features.
+VaporChat is a high-performance, single-page communication interface built with a "Midnight Neon" aesthetic. It features real-time data synchronization via Firebase and an integrated AI assistant powered by the DeepSeek-V4-Pro model.
 
-## ✨ Features
-- **Real-Time Messaging:** Instant data synchronization using Firestore `onSnapshot`.
-- **Google Authentication:** Secure login integration via Firebase Auth.
-- **AI Integration:** Integrated `/ask` command powered by the **DeepSeek-V4-Pro** model.
-- **Midnight Neon UI:** Responsive, vaporwave-inspired design using Tailwind CSS with glassmorphism and neon accents.
-- **Serverless Hosting:** Optimized for deployment on GitHub Pages.
+## ✨ Core Features
+- **Direct Email Messaging:** Initiate secure communication links with any user via their email address.
+- **DeepSeek AI Integration:** Use the `/ask` command to query the DeepSeek-V4-Pro model via the Hugging Face Router.
+- **Real-Time Synchronicity:** Instant message delivery and receipt powered by Firestore `onSnapshot` listeners.
+- **Google OAuth 2.0:** Secure, environment-aware authentication protocol.
+- **VaporWave UI:** A custom-engineered "Midnight Neon" interface featuring glassmorphism, responsive CSS grids, and CSS3 animations.
 
-## 🛠️ Tech Stack
+## 🛠️ Technical Stack
 - **Frontend:** HTML5, Tailwind CSS, JavaScript (ES6+)
-- **Backend-as-a-Service:** Firebase (Auth & Cloud Firestore)
+- **Backend:** Firebase (Authentication & Cloud Firestore)
 - **AI Engine:** DeepSeek-V4-Pro (via Hugging Face Inference API)
+- **Architecture:** Client-Server model with asynchronous API handling.
 
-## 🚀 Getting Started
-1. **Host:** Upload `index.html` to a GitHub repository and enable GitHub Pages.
-2. **Authorize:** Add your GitHub Pages URL to the "Authorized Domains" in your Firebase Auth settings.
-3. **Configure:** Open the app, click the **Settings ⚙️** icon, and enter your Hugging Face API Token.
-4. **Chat:** Sign in with Google and use `/ask` to chat with the AI.
+## 🚀 Deployment & Setup
+1. **Hosting:** Deploy to a secure `https` environment (e.g., GitHub Pages) to enable OAuth features.
+2. **Firebase Configuration:** - Add your deployment URL to **Authorized Domains** in the Firebase Console.
+   - Ensure Firestore rules allow read/write access for authenticated users.
+3. **AI Activation:** - Open **System Settings** in the VaporChat sidebar.
+   - Enter your `HF_TOKEN` (VaporKey) to enable the AI protocol.
 
 ## 📜 Computer Science Context (9618 Syllabus)
-This project demonstrates key practical applications of:
-- **Client-Server Architecture:** Managing state between the browser and cloud databases.
-- **API Integration:** Implementing RESTful-style communication with external LLM providers.
-- **Asynchronous Programming:** Handling promises and async/await for smooth UI updates.
-- **Data Security:** Using `localStorage` for client-side key management.
+This project serves as a practical implementation of several A-Level Computer Science concepts:
+- **Client-Server Model:** Managing state and data persistence across distributed nodes.
+- **API Connectivity:** Implementing REST-style requests with Authorization headers for LLM inference.
+- **Data Security:** Client-side encryption of API tokens using `localStorage`.
+- **Robustness:** Implementation of `try-catch` blocks and protocol-aware error handling to prevent runtime crashes.
