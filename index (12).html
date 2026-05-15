@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaporChat | AI Protocol</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=VT323&display=swap');
+        :root { --neon-cyan: #00f0ff; --neon-purple: #d946ef; --bg-deep: #050714; }
+        body { background-color: var(--bg-deep); color: #fff; font-family: 'Space Mono', monospace; height: 100vh; overflow: hidden; }
+        .glass-panel { background: rgba(15, 20, 45, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(0, 240, 255, 0.1); }
+        .message-bubble { max-width: 80%; padding: 12px 16px; border-radius: 15px; margin-bottom: 10px; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
+        #settingsModal, #newChatModal { display: none; position: fixed; inset: 0; z-index: 999; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="flex">
+
+    <aside class="w-72 glass-panel border-r border-cyan-900/30 flex flex-col">
+        <div class="p-6 border-b border-cyan-900/30">
+            <h1 class="text-3xl font-bold text-cyan-400 tracking-tighter" style="font-family: 'VT323';">VAPOR_OS</h1>
+        </div>
+
+        <div class="p-4">
+            <button onclick="openNewChat()" class="w-full py-2 bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 text-xs font-bold hover:bg-cyan-500/20 transition mb-4">
+                + INITIATE NEW_LINK
+            </button>
+            <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2" id="contactsList">
+                </div>
+        </div>
+
+        <div class="mt-auto p-4 border-t border-cyan-900/30 space-y-2">
+            <div id="userInfo" class="text-[10px] text-cyan-400 mb-3 opacity-60 truncate"></div>
+            <button onclick="openSettings()" class="w-full py-2 border border-cyan-500/50 text-cyan-400 text-xs hover:bg-cyan-500/10">⚙️ SETTINGS</button>
+            <button id="authBtn" class="w-full py-2 border border-purple-500/50 text-purple-400 text-xs hover:bg-purple-500/10">LOGIN</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative">
+        <div id="chatHeader" class="p-4 glass-panel border-b border-cyan-900/20">
+            <span class="text-xs text-cyan-400 font-bold" id="activeRecipient">// NO_ACTIVE_SESSION</span>
+        </div>
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col"></div>
+        <div class="p-6 glass-panel border-t border-cyan-900/30">
+            <div class="flex gap-4">
+                <input id="messageInput" type="text" placeholder="Transmit signal..." class="flex-1 bg-black/40 border border-cyan-500/30 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-cyan-400 transition">
+                <button onclick="sendMessage()" class="bg-cyan-500/20 border border-cyan-400 text-cyan-400 px-8 py-2 rounded-lg hover:bg-cyan-400 hover:text-black transition font-bold">SEND</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="newChatModal">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md border-cyan-400/30">
+            <h2 class="text-xl font-bold text-cyan-400 mb-4 tracking-widest">INITIATE_LINK</h2>
+            <input id="newChatEmail" type="email" placeholder="target_user@email.com" class="w-full bg-black/60 border border-cyan-900 px-4 py-3 rounded text-sm focus:border-cyan-400 outline-none mb-6">
+            <div class="flex gap-4">
+                <button onclick="startNewChat()" class="flex-1 py-3 bg-cyan-500 text-black font-bold rounded">CONNECT</button>
+                <button onclick="closeNewChat()" class="flex-1 py-3 border border-gray-700 text-gray-400 rounded">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md border-cyan-400/30">
+            <h2 class="text-xl font-bold text-cyan-400 mb-6 uppercase">System_Config</h2>
+            <input id="hfTokenInput" type="password" placeholder="Hugging Face Token" class="w-full bg-black/60 border border-cyan-900 px-4 py-2 rounded text-sm mb-6">
+            <div class="flex gap-4">
+                <button onclick="saveSettings()" class="flex-1 py-3 bg-cyan-500 text-black font-bold rounded">SAVE</button>
+                <button onclick="closeSettings()" class="flex-1 py-3 border border-gray-700 text-gray-400 rounded">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOhj-irQ-UKfJ-Tp0ckbxzTXYW_-fY4KQ",
+            authDomain: "vaporchat-54b50.firebaseapp.com",
+            projectId: "vaporchat-54b50",
+            storageBucket: "vaporchat-54b50.firebasestorage.app",
+            messagingSenderId: "867648027768",
+            appId: "1:867648027768:web:d4b10d221d867e3fba018d"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let currentUser = null, activeChat = null, unsubscribe = null;
+
+        // AUTH
+        const authBtn = document.getElementById('authBtn');
+        authBtn.onclick = () => {
+            if (currentUser) auth.signOut();
+            else {
+                if (window.location.protocol === 'file:') return alert("Protocol Error: Host on GitHub Pages.");
+                auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+            }
+        };
+
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            authBtn.textContent = user ? "LOGOUT" : "LOGIN";
+            document.getElementById('userInfo').textContent = user ? `ID: ${user.email}` : "UNAUTHORIZED";
+            if (user) loadContacts();
+        });
+
+        // CONTACTS & MESSAGING
+        function openNewChat() { document.getElementById('newChatModal').style.display = 'flex'; }
+        function closeNewChat() { document.getElementById('newChatModal').style.display = 'none'; }
+
+        function startNewChat() {
+            const email = document.getElementById('newChatEmail').value.trim().toLowerCase();
+            if (email && email !== currentUser.email) {
+                selectChat(email);
+                closeNewChat();
+            } else {
+                alert("Invalid email protocol.");
+            }
+        }
+
+        async function loadContacts() {
+            const list = document.getElementById('contactsList');
+            // Listen for any messages involving the user to build the contact list dynamically
+            db.collection('smails')
+                .where('senderEmail', '==', currentUser.email)
+                .onSnapshot(snap => updateUI(snap, 'receiverEmail'));
+            
+            db.collection('smails')
+                .where('receiverEmail', '==', currentUser.email)
+                .onSnapshot(snap => updateUI(snap, 'senderEmail'));
+
+            const contacts = new Set();
+            function updateUI(snap, field) {
+                snap.forEach(doc => contacts.add(doc.data()[field]));
+                list.innerHTML = '';
+                contacts.forEach(email => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 rounded border border-cyan-500/10 hover:bg-cyan-500/5 cursor-pointer text-xs mb-1";
+                    div.textContent = email.toUpperCase();
+                    div.onclick = () => selectChat(email);
+                    list.appendChild(div);
+                });
+            }
+        }
+
+        function selectChat(email) {
+            activeChat = email;
+            document.getElementById('activeRecipient').textContent = `// SESSION: ${email.toUpperCase()}`;
+            if (unsubscribe) unsubscribe();
+            const container = document.getElementById('messagesContainer');
+            
+            unsubscribe = db.collection('smails')
+                .where('senderEmail', 'in', [currentUser.email, email])
+                .where('receiverEmail', 'in', [currentUser.email, email])
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snap => {
+                    container.innerHTML = '';
+                    snap.forEach(doc => {
+                        const m = doc.data();
+                        const isMe = m.senderEmail === currentUser.email;
+                        const bubble = document.createElement('div');
+                        bubble.className = `message-bubble ${isMe ? 'self-end bg-purple-600/20 border border-purple-500/30' : 'self-start bg-cyan-600/10 border border-cyan-500/20'}`;
+                        bubble.innerHTML = `<p class="text-sm">${m.content}</p><span class="text-[9px] opacity-40 mt-1 block">${m.type === 'ai' ? '🤖 AI' : 'USER'}</span>`;
+                        container.appendChild(bubble);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                });
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !activeChat) return;
+
+            const isAI = text.startsWith('/ask');
+            const cleanText = isAI ? text.replace('/ask', '').trim() : text;
+
+            await db.collection('smails').add({
+                senderEmail: currentUser.email,
+                receiverEmail: activeChat,
+                content: cleanText,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                type: 'user'
+            });
+
+            input.value = '';
+            if (isAI) callDeepSeek(cleanText);
+        }
+
+        async function callDeepSeek(prompt) {
+            const token = localStorage.getItem('HF_TOKEN');
+            if (!token) return alert("Key Missing.");
+            try {
+                const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "deepseek-ai/DeepSeek-V4-Pro:novita", messages: [{ role: "user", content: prompt }] })
+                });
+                const data = await res.json();
+                await db.collection('smails').add({
+                    senderEmail: activeChat,
+                    receiverEmail: currentUser.email,
+                    content: data.choices[0].message.content,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    type: 'ai'
+                });
+            } catch (e) { alert("AI connection failed."); }
+        }
+
+        function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
+        function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+        function saveSettings() {
+            localStorage.setItem('HF_TOKEN', document.getElementById('hfTokenInput').value);
+            closeSettings();
+        }
+    </script>
+</body>
+</html>
